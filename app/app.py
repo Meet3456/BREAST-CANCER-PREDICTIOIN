@@ -7,8 +7,10 @@ import numpy as np
 
 
 def get_clean_data():
+  ## READING THE DATA
   data = pd.read_csv("data/data.csv")
   
+  ## CLEANING THE DATA
   data = data.drop(['Unnamed: 32', 'id'], axis=1)
   
   data['diagnosis'] = data['diagnosis'].map({ 'M': 1, 'B': 0 })
@@ -20,11 +22,11 @@ def get_clean_data():
 def add_sidebar():
   st.sidebar.header("Cell Nuclei Measurements")
   
-  ## RECEIVING THE ACTUAL PREPROCESSED DATA
+  ## RECEIVING THE CLEAN DATA
   data = get_clean_data()
   
   slider_labels = [
-        ## "KEY"->"VALUE" -> LABEL IS THAT WILL BE DISPLAYED ON STREAMLIT: KEY IS THE ACTUAL COLUMN I
+        ## "KEY"->"VALUE" -> LABEL IS THAT WILL BE DISPLAYED ON STREAMLIT: KEY ARE THE ACTUAL COLUMNS
         ("Radius (mean)", "radius_mean"),
         ("Texture (mean)", "texture_mean"),
         ("Perimeter (mean)", "perimeter_mean"),
@@ -67,6 +69,7 @@ def add_sidebar():
        min_value=float(0),
        ## DATA KE KEY MAI JO VALUE(ACTUAL COLUMN)PRESENT HAI USKA MAX VALUE
        max_value=float(data[key].max()),
+       ## IF NOTHING , THEN MEAN VALUE
        value=float(data[key].mean())
     )
     
@@ -82,10 +85,11 @@ def get_scaled_values(input_dict):
   ## EMPTY DICT TO STORE THE SCALED VALUE:
   scaled_dict = {}
   
-  ## ITERATING THROUGH THE INPUT DICT(WHICH STORES THE VALUE OF EACH COLUMN)
+  ## ITERATING THROUGH THE INPUT DICT(WHICH STORES THE VALUE OF EACH COLUMN)-> RECEIVED THROUGH STREAMLIT
   for key, value in input_dict.items():
     max_val = X[key].max()
     min_val = X[key].min()
+    ## MIN-MAX SCALING
     scaled_value = (value - min_val) / (max_val - min_val)
     scaled_dict[key] = scaled_value
   
@@ -95,7 +99,7 @@ def get_scaled_values(input_dict):
 
 def get_radar_chart(input_data):
   
-  ## the input_data which stores the value of input_dict(values of each 30 columns)
+  ## the input_data STORES -> input_dict(values of each 30 columns)
   ## scaling down the values of input data:
   ## get_scaled_values -> Takes input a input_dict and returns a scaled_dict
   input_data = get_scaled_values(input_data)
@@ -156,13 +160,17 @@ def get_radar_chart(input_data):
 
 
 def add_predictions(input_data):
+    ## IMPORTING THE MODELS FOR SCALING AND TRAINING OF INPUT DATA
     model = pickle.load(open('model/model.pkl','rb'))
     scaler = pickle.load(open('model/scaler.pkl','rb'))
 
+    ## AS WE RECEIVE A LIST OF ARRAY , WE RESHAPE INTO SINGLE ARRAY 
     input_array = np.array(list(input_data.values())).reshape(1,-1)
    
+    ## APPLYING STANDARDSCALAR
     input_array_scaled = scaler.transform(input_array)
 
+    ## PREDICTING THE OUTPUT
     prediction = model.predict(input_array_scaled)
 
     st.subheader("Cell cluster prediction")
@@ -173,7 +181,7 @@ def add_predictions(input_data):
     else:
         st.write("<span class='diagnosis malicious'>Malicious</span>", unsafe_allow_html=True)
     
-  
+    ## LOGISTIC REGRESSION RETURNS 2 PROBABILITIES VALUES -> ONE OF BEING BENINGN AND OTHER IS MALICIOUS
     st.write("Probability of being benign: ", model.predict_proba(input_array_scaled)[0][0])
     st.write("Probability of being malicious: ", model.predict_proba(input_array_scaled)[0][1])
   
